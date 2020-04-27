@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prestashop
+  namespace: prestashop
+  labels:
+    app: prestashop
+spec:
+  ports:
+    - nodePort: 31111
+      port: 80
+      targetPort: 80
+  selector:
+    app: prestashop
+    tier: frontend
+  type: NodePort
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prestashop
+  namespace: prestashop
+  labels:
+    app: prestashop
+spec:
+  selector:
+    matchLabels:
+      app: prestashop
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: prestashop
+        tier: frontend
+    spec:
+      containers:
+      - image: bitnami/prestashop:latest
+        name: prestashop
+        env:
+          - name: MARIADB_HOST
+            value: mariadb-prestashop
+          - name: "MARIADB_ROOT_PASSWORD"
+            valueFrom:
+              secretKeyRef:
+                name: prestashop-secret
+                key: mariadbpasswd      
+          - name: MYSQL_CLIENT_CREATE_DATABASE_NAME
+            valueFrom:
+              secretKeyRef:
+                name: prestashop-secret
+                key: prestashopdbname  
+          - name: MYSQL_CLIENT_CREATE_DATABASE_USER
+            valueFrom:
+              secretKeyRef:
+                name: prestashop-secret
+                key: prestashopdbuser
+          - name: MYSQL_CLIENT_CREATE_DATABASE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: prestashop-secret
+                key: prestashopdbpasswd
+          - name: PRESTASHOP_DATABASE_USER
+            valueFrom:
+              secretKeyRef:
+                name: prestashop-secret
+                key: prestashopdbuser
+          - name: PRESTASHOP_DATABASE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: prestashop-secret
+                key: mariadbpasswd  
+          - name: PRESTASHOP_DATABASE_NAME
+            valueFrom:
+              secretKeyRef:
+                name: prestashop-secret
+                key: prestashopdbname
+          - name: PRESTASHOP_FIRST_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: prestashop-config-map
+                key: prestashop_first_name
+          - name: PRESTASHOP_LAST_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: prestashop-config-map
+                key: prestashop_last_name
+          - name: PRESTASHOP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: prestashop-secret
+                key: prestashopuserpasswd  
+          - name: PRESTASHOP_EMAIL
+            valueFrom:
+              configMapKeyRef:
+                name: prestashop-config-map
+                key: prestashop_email
+          - name: PRESTASHOP_COUNTRY
+            valueFrom:
+              configMapKeyRef:
+                name: prestashop-config-map
+                key: prestashop_country
+          - name: PRESTASHOP_LANGUAGE
+            valueFrom:
+              configMapKeyRef:
+                name: prestashop-config-map
+                key: prestashop_language
+        ports:
+        - containerPort: 80
+          name: prestashop
+        volumeMounts:
+        - name: prestashop-persistent-storage
+          mountPath: /var/www/html
+      volumes:
+      - name: prestashop-persistent-storage
+        persistentVolumeClaim:
+          claimName: prestashop-pv-claim

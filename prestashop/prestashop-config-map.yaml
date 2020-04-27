@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prestashop-config-map
+  namespace: prestashop
+data:
+  prestashop_first_name: "TIKPENTIYENA"
+  prestashop_last_name: "Diyama"
+  prestashop_email: "306826@supinfo.com"
+  prestashop_country: "us"
+  prestashop_language: "en"
